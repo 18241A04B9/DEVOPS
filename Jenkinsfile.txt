@@ -1,17 +1,40 @@
 pipeline {
-    agent {
-        docker { image 'python:3.12' }
-    }
+    agent any
     stages {
-        stage('Build') {
+        stage('Checkout') {
             steps {
-                sh 'python --version'
+                git branch: 'main', url: 'https://github.com/youruser/yourrepo.git'
             }
         }
-         stage('Test'){
-          steps{
-              sh 'echo "HELLO TEST" '
-             }
-       }
+
+        stage('Build') {
+            steps {
+                echo 'Building the project...'
+                sh 'echo "Build successful" > build.txt'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo 'Running tests...'
+                sh 'echo "Tests passed"'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo 'Deploying the project...'
+                sh 'echo "Deploy complete"'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline finished successfully!'
+        }
+        failure {
+            echo 'Pipeline failed!'
+        }
     }
 }
