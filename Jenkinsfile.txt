@@ -5,12 +5,12 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                sh python --version
+                sh 'python --version'
             }
         }
          stage('Test'){
           steps{
-              sh echo "HELLO TEST"
+              sh 'echo "HELLO TEST" '
              }
        }
     }
