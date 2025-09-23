@@ -1,12 +1,17 @@
 pipeline {
     agent {
-        docker { image 'alpine:latest' }
+        docker { image 'python:3.12' }
     }
     stages {
-        stage('Hello') {
+        stage('Build') {
             steps {
-                sh 'echo "Hello, World from Docker Container!"'
+                sh python --version
             }
         }
+         stage('Test'){
+          steps{
+              sh echo "HELLO TEST"
+             }
+       }
     }
 }
