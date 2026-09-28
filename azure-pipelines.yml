@@ -1,5 +1,5 @@
 # Azure DevOps Pipeline
-# Build Java application -> Build Docker image -> Push to ACR
+# Build Java application -> Publish artifact -> Build Docker image -> Push to ACR
 
 trigger:
 - main
@@ -29,6 +29,7 @@ stages:
       vmImage: ubuntu-latest
 
     steps:
+
     - task: Maven@4
       displayName: Maven Build
       inputs:
@@ -37,6 +38,13 @@ stages:
         options: '-DskipTests'
         javaHomeOption: 'JDKVersion'
         jdkVersionOption: '17'
+
+    # Publish JAR as pipeline artifact
+    - task: PublishPipelineArtifact@1
+      displayName: Publish JAR Artifact
+      inputs:
+        targetPath: '$(Build.SourcesDirectory)/target'
+        artifact: 'java-artifact'
 
 
 # ==========================================
@@ -55,6 +63,15 @@ stages:
       vmImage: ubuntu-latest
 
     steps:
+
+    # Download artifact from Build stage
+    - task: DownloadPipelineArtifact@2
+      displayName: Download JAR Artifact
+      inputs:
+        artifact: 'java-artifact'
+        path: '$(Build.SourcesDirectory)/target'
+
+    # Build and push Docker image
     - task: Docker@2
       displayName: Build and Push Image
       inputs:
