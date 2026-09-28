@@ -1,59 +1,66 @@
+# Azure DevOps Pipeline
+# Build Java application -> Build Docker image -> Push to ACR
+
 trigger:
 - main
 
-pool:
-  vmImage: 'ubuntu-latest'
+resources:
+- repo: self
+
+variables:
+  tag: '$(Build.BuildId)'
+  imageRepository: 'java-app'
+  containerRegistry: 'sanjeevimages.azurecr.io'
+  dockerfilePath: '$(Build.SourcesDirectory)/Dockerfile'
 
 stages:
 
+# ==========================================
+# 1. BUILD JAVA APPLICATION
+# ==========================================
 - stage: Build
-  displayName: Build Java Application
+  displayName: Build
+
   jobs:
-  - job: MavenBuild
-    displayName: Maven Build
+  - job: BuildJob
+    displayName: Build Java Application
+
+    pool:
+      vmImage: ubuntu-latest
+
     steps:
-
-    - task: JavaToolInstaller@0
-      inputs:
-        versionSpec: '17'
-        jdkArchitectureOption: 'x64'
-        jdkSourceOption: 'PreInstalled'
-
     - task: Maven@4
       displayName: Maven Build
       inputs:
         mavenPomFile: 'pom.xml'
         goals: 'clean package'
         options: '-DskipTests'
-        publishJUnitResults: false
-
-    - task: PublishPipelineArtifact@1
-      displayName: Publish JAR
-      inputs:
-        targetPath: '$(System.DefaultWorkingDirectory)/target'
-        artifact: 'java-artifact'
+        javaHomeOption: 'JDKVersion'
+        jdkVersionOption: '17'
 
 
+# ==========================================
+# 2. BUILD AND PUSH DOCKER IMAGE
+# ==========================================
 - stage: BuildImage
-  displayName: Build Docker Image
+  displayName: Build Image
+
   dependsOn: Build
+
   jobs:
-  - job: DockerBuild
-    displayName: Docker Build
+  - job: BuildImageJob
+    displayName: Build and Push Docker Image
+
+    pool:
+      vmImage: ubuntu-latest
+
     steps:
-
-    - task: DownloadPipelineArtifact@2
-      displayName: Download JAR
-      inputs:
-        artifact: 'java-artifact'
-        path: '$(System.DefaultWorkingDirectory)/target'
-
     - task: Docker@2
-      displayName: Build Docker Image
+      displayName: Build and Push Image
       inputs:
-        command: 'build'
-        repository: 'java-hello-world'
-        Dockerfile: '**/Dockerfile'
+        command: buildAndPush
+        containerRegistry: 'dockerserviceconnection'
+        repository: '$(imageRepository)'
+        dockerfile: '$(dockerfilePath)'
         tags: |
-          $(Build.BuildId)
-          latest
+          $(tag)
